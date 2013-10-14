@@ -133,8 +133,8 @@ func main() {
 	j.RepoToken = flag.Arg(0)
 	j.ServiceJobId = uuid.New()
 	//j.Git = collectGitInfo()
-	j.Git = Git{Head{}
-	    Branch:os.Getenv("WERCKER_GIT_BRANCH"),
+	j.Git = &Git{Head: Head{},
+		Branch: os.Getenv("WERCKER_GIT_BRANCH"),
 	}
 	if *service != "" {
 		j.ServiceName = *service
