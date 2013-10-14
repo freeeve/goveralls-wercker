@@ -195,7 +195,7 @@ func main() {
 	j.RunAt = time.Now()
 	j.RepoToken = flag.Arg(0)
 	j.ServiceJobId = uuid.New()
-	j.Git = collectGitInfo()
+	//j.Git = collectGitInfo()
 	if *service != "" {
 		j.ServiceName = *service
 	}
