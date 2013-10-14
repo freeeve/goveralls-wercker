@@ -98,69 +98,6 @@ type GocovResult struct {
 	}
 }
 
-// collectGitInfo runs several git commands to compose a Git object.
-func collectGitInfo() *Git {
-	gitCmds := map[string][]string{
-		"id":      {"git", "rev-parse", "HEAD"},
-		"branch":  {"git", "rev-parse", "--abbrev-ref", "HEAD"},
-		"aname":   {"git", "log", "-1", "--pretty=%aN"},
-		"aemail":  {"git", "log", "-1", "--pretty=%aE"},
-		"cname":   {"git", "log", "-1", "--pretty=%cN"},
-		"cemail":  {"git", "log", "-1", "--pretty=%cE"},
-		"message": {"git", "log", "-1", "--pretty=%s"},
-		"remotes": {"git", "remote", "-v"},
-	}
-	results := map[string]string{}
-	remotes := map[string]Remote{}
-	gitPath, err := exec.LookPath("git")
-	if err != nil {
-		log.Fatal(err)
-	}
-	for key, args := range gitCmds {
-		cmd := exec.Cmd{}
-		cmd.Path = gitPath
-		cmd.Args = args
-		cmd.Stderr = os.Stderr
-		ret, err := cmd.Output()
-		if err != nil {
-			log.Fatal(err)
-		}
-		s := string(ret)
-		s = strings.TrimRight(s, "\n")
-		results[key] = s
-	}
-	for _, line := range strings.Split(results["remotes"], "\n") {
-		matches := remotesRE.FindAllStringSubmatch(line, -1)
-		if len(matches) != 1 {
-			continue
-		}
-		if len(matches[0]) != 3 {
-			continue
-		}
-		name := matches[0][1]
-		url := matches[0][2]
-		r := Remote{
-			Name: name,
-			Url:  url,
-		}
-		remotes[name] = r
-	}
-	h := Head{}
-	h.Id = results["id"]
-	h.AuthorName = results["aname"]
-	h.AuthorEmail = results["aemail"]
-	h.CommitterName = results["cname"]
-	h.CommitterEmail = results["cemail"]
-	h.Message = results["message"]
-	g := Git{}
-	g.Head = h
-	g.Branch = results["branch"]
-	for _, r := range remotes {
-		g.Remotes = append(g.Remotes, &r)
-	}
-	return &g
-}
-
 func main() {
 	log.SetFlags(log.Ltime | log.Lshortfile)
 	//
@@ -196,6 +133,9 @@ func main() {
 	j.RepoToken = flag.Arg(0)
 	j.ServiceJobId = uuid.New()
 	//j.Git = collectGitInfo()
+	j.Git = Git{Head{}
+	    Branch:os.Getenv("WERCKER_GIT_BRANCH"),
+	}
 	if *service != "" {
 		j.ServiceName = *service
 	}
